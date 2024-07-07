@@ -9,6 +9,12 @@ export class UserQueryDto {
 }
 
 @ApiExtraModels()
+export class TaiKhoanQueryDto {
+  @ApiProperty({ required: true })
+  taiKhoan: number;
+}
+
+@ApiExtraModels()
 export class UserParamDto {
   @ApiProperty({ required: true, default: 1 })
   soTrang: number;

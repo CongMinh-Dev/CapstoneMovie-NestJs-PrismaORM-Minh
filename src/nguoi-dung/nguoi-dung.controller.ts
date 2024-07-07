@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpCode, HttpException, HttpStatus, UseGuards, Req } from '@nestjs/common';
 import { NguoiDungService } from './nguoi-dung.service';
-import { InfoUserQueryDto, KindUserType, NguoiDungType, UserParamDto, UserQueryDto } from './dto/create-nguoi-dung.dto';
+import { InfoUserQueryDto, KindUserType, NguoiDungType, TaiKhoanQueryDto, UserParamDto, UserQueryDto } from './dto/create-nguoi-dung.dto';
 import { NguoiDung } from '@prisma/client'
 import { ApiBearerAuth, ApiProperty, ApiTags } from "@nestjs/swagger"
 import { AuthGuard } from '@nestjs/passport';
@@ -29,6 +29,27 @@ class userRegisType {
   @ApiProperty()
   loaiNguoiDung: string
 }
+
+class userUpdateType {
+  @ApiProperty()
+  taiKhoan: number
+
+  @ApiProperty()
+  email: string
+
+  @ApiProperty()
+  matKhau: string
+
+  @ApiProperty()
+  hoTen: string
+
+  @ApiProperty()
+  soDt: string
+
+  @ApiProperty()
+  loaiNguoiDung: string
+}
+
 
 @ApiTags("Quản Lý Người Dùng")
 @Controller('api/QuanLyNguoiDung')
@@ -99,31 +120,38 @@ export class NguoiDungController {
   @UseGuards(AuthGuard("jwt"))
   @Post("/ThemNguoiDung")
   themNguoiDung(@Body() body: userRegisType) {
-    return this.nguoiDungService.themNguoiDung( body);
+    return this.nguoiDungService.themNguoiDung(body);
+  }
+
+  // cập nhật
+  @HttpCode(200)
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard("jwt"))
+  @Post("/CapNhatThongTinNguoiDung")
+  capNhatNguoiDung(@Body() body: userUpdateType) {
+    return this.nguoiDungService.capNhatNguoiDung(body);
+  }
+
+  // xóa
+  @HttpCode(200)
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard("jwt"))
+  @Delete("/XoaNguoiDung")
+  xoaNguoiDung(@Query() query: TaiKhoanQueryDto) {
+    return this.nguoiDungService.xoaNguoiDung(query.taiKhoan);
   }
 
 
 
 
-  // @Post()
-  // create(@Body() createNguoiDungDto: CreateNguoiDungDto) {
-  //   return this.nguoiDungService.create(createNguoiDungDto);
+
+  // @HttpCode(200)
+  // @ApiBearerAuth()
+  // @UseGuards(AuthGuard("jwt"))
+  // @Post("/XoaNguoiDung")
+  // xoaNguoiDung() {
+  //   return this.nguoiDungService.xoaNguoiDung();
   // }
 
 
-
-  // @Get(':id')
-  // findOne(@Param('id') id: string) {
-  //   return this.nguoiDungService.findOne(+id);
-  // }
-
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateNguoiDungDto: UpdateNguoiDungDto) {
-  //   return this.nguoiDungService.update(+id, updateNguoiDungDto);
-  // }
-
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.nguoiDungService.remove(+id);
-  // }
 }

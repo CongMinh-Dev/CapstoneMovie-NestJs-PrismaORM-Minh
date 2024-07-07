@@ -1,9 +1,7 @@
 import { JwtService } from '@nestjs/jwt';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { CreateNguoiDungDto, KindUserType, NguoiDungType, PhanTrangNguoiDungType } from './dto/create-nguoi-dung.dto';
-import { UpdateNguoiDungDto } from './dto/update-nguoi-dung.dto';
+import { HttpException, Injectable } from '@nestjs/common';
 import { PrismaClient, NguoiDung } from '@prisma/client';
-import * as bcrypt from 'bcrypt'
+
 
 @Injectable()
 export class NguoiDungService {
@@ -12,23 +10,44 @@ export class NguoiDungService {
 
 
   async getAllUser(tuKhoa) {
+
     if (tuKhoa) {
+      // nằm trong ds tài khoản thì tìm tài khoản trước
+      let arrTaiKhoan = await this.prisma.nguoiDung.findMany({
+        select: { tai_khoan: true }
+      })
+      let indexTaiKhoan = arrTaiKhoan.findIndex((item) => {
+        return item.tai_khoan == tuKhoa
+      })
+
       let tuKhoaNum = Number(tuKhoa)
-      const items = await this.prisma.nguoiDung.findMany({
-        where: {
-          OR: [
-            { tai_khoan: tuKhoaNum },
-            { ho_ten: { contains: tuKhoa } },
-            { so_dt: { contains: tuKhoa } },
-          ],
-        },
-      });
-      let data = {
-        "statusCode": 200,
-        "message": "Xử lý thành công!",
-        "content": items
+      if (indexTaiKhoan != -1) {
+        let item = await this.prisma.nguoiDung.findUnique({
+          where: { tai_khoan: tuKhoaNum }
+        })
+        let data = {
+          "statusCode": 200,
+          "message": "Xử lý thành công!",
+          "content": item
+        }
+        return data
+      } else {
+        const items = await this.prisma.nguoiDung.findMany({
+          where: {
+            OR: [
+              { ho_ten: { contains: tuKhoa } },
+              { so_dt: { contains: tuKhoa } },
+            ],
+          },
+        });
+        let data = {
+          "statusCode": 200,
+          "message": "Xử lý thành công!",
+          "content": items
+        }
+        return data
       }
-      return data
+
     } else {
       let items: NguoiDung[] = await this.prisma.nguoiDung.findMany()
       let data = {
@@ -40,35 +59,58 @@ export class NguoiDungService {
     }
   }
 
+
+  // tìm user
   async findUser(tuKhoa) {
     if (tuKhoa) {
+      // nằm trong ds tài khoản thì tìm tài khoản trước
+      let arrTaiKhoan = await this.prisma.nguoiDung.findMany({
+        select: { tai_khoan: true }
+      })
+      let indexTaiKhoan = arrTaiKhoan.findIndex((item) => {
+        return item.tai_khoan == tuKhoa
+      })
+
       let tuKhoaNum = Number(tuKhoa)
-      const items = await this.prisma.nguoiDung.findMany({
-        where: {
-          OR: [
-            { tai_khoan: tuKhoaNum },
-            { ho_ten: { contains: tuKhoa } },
-            { so_dt: { contains: tuKhoa } },
-          ],
-        },
-      });
-      let data = {
-        "statusCode": 200,
-        "message": "Xử lý thành công!",
-        "content": items
+      if (indexTaiKhoan != -1) {
+        let item = await this.prisma.nguoiDung.findUnique({
+          where: { tai_khoan: tuKhoaNum }
+        })
+        let data = {
+          "statusCode": 200,
+          "message": "Xử lý thành công!",
+          "content": item
+        }
+        return data
+      } else {
+        const items = await this.prisma.nguoiDung.findMany({
+          where: {
+            OR: [
+              { ho_ten: { contains: tuKhoa } },
+              { so_dt: { contains: tuKhoa } },
+            ],
+          },
+        });
+        let data = {
+          "statusCode": 200,
+          "message": "Xử lý thành công!",
+          "content": items
+        }
+        return data
       }
-      return data;
+
     } else {
-      let items = await this.prisma.nguoiDung.findMany()
+      let items: NguoiDung[] = await this.prisma.nguoiDung.findMany()
       let data = {
         "statusCode": 200,
         "message": "Xử lý thành công!",
         "content": items
       }
-      return data;
+      return data
     }
   }
 
+  // lấy ds loại người dùng
   async getTypeUser() {
     const items = await this.prisma.nguoiDung.findMany({
       distinct: ["loai_nguoi_dung"], // Xác định cột riêng biệt
@@ -84,6 +126,7 @@ export class NguoiDungService {
     return data;
   }
 
+  // phan trang
   async phanTrangNguoiDung(soTrang, soPhanTuTrenTrang) {
 
     let index = (soTrang - 1) * soPhanTuTrenTrang
@@ -124,7 +167,7 @@ export class NguoiDungService {
 
       if (matKhau == checkEmail.mat_khau) {
         let token = this.jwtService.sign(
-          { data: email },
+          { email: email, taiKhoan: checkEmail.tai_khoan },
           { expiresIn: "5d", algorithm: "HS256", secret: "bi_mat" })
         let data = {
           "statusCode": 200,
@@ -201,7 +244,7 @@ export class NguoiDungService {
   // thong tin tai khoan
   async thongTinTaiKhoan(user) {
     let items = await this.prisma.nguoiDung.findFirst({
-      where: { email: user.data },
+      where: { email: user.email },
       include: {
         DatVe: {
           include: {
@@ -227,17 +270,17 @@ export class NguoiDungService {
   // thong tin nguoi dung
   async thongTinNguoiDung(decodeToken, email) {
     // return(`${decodeToken.data} & ${email}`)
-    if (decodeToken.data == email) {
+    if (decodeToken.email == email) {
       let items = await this.prisma.nguoiDung.findFirst({
-        where: { email: decodeToken.data }
+        where: { email: decodeToken.email }
       })
       let data = {
         "statusCode": 200,
-        "message": "Đăng ký thành công!",
+        "message": "Xử lý thành công!",
         "content": items
       }
       return data
-    }else{
+    } else {
       let data = {
         "statusCode": 400,
         "message": "Không tìm thấy tài nguyên!",
@@ -263,8 +306,6 @@ export class NguoiDungService {
       }
       throw new HttpException(data, 400)
     }
-
-
     await this.prisma.nguoiDung.create({
       data: {
         email: model.email,
@@ -288,27 +329,100 @@ export class NguoiDungService {
     return data
   }
 
+  // cập nhật người dùng
+  async capNhatNguoiDung(user) {
+
+    // tài khoản phải nằm trong ds thì mới được update
+    let arrUser = await this.prisma.nguoiDung.findMany({
+      select: { tai_khoan: true, email: true }
+    })
+    let indexUser = arrUser.findIndex((item) => {
+      return item.tai_khoan == user.taiKhoan
+    })
+    if (indexUser != -1) {
+      //email chỉ được trùng với chính nó, k đc trùng với các email còn lại
+      let arrEmail = await this.prisma.nguoiDung.findMany({
+        select: { email: true }
+      })
+      // lọc ra arrEmail với điệu kiệu không được trùng vs email hiện tại
+      let arrEmailFilter = arrEmail.filter((item) => {
+        return item.email != arrUser[indexUser].email
+      })
+
+      let indexEmail = arrEmailFilter.findIndex((item) => {
+        return item.email.toLowerCase() == user.email.toLowerCase()
+      })
+      if (indexEmail != -1) {
+        let data = {
+          "statusCode": 400,
+          "message": "Không tìm thấy tài nguyên!",
+          "content": "Email đã tồn tại!",
+        }
+        throw new HttpException(data, 400)
+      } else {
+        await this.prisma.nguoiDung.update({
+          where: {
+            tai_khoan: user.taiKhoan
+          },
+          data: {
+            email: user.email,
+            mat_khau: user.matKhau,
+            ho_ten: user.hoTen,
+            so_dt: user.soDt,
+            loai_nguoi_dung: user.loaiNguoiDung
+          }
+        });
+        let data = {
+          "statusCode": 200,
+          "message": "Cập nhật Người Dùng thành công!",
+          "content": {
+            email: user.email,
+            matKhau: user.matKhau,
+            hoTen: user.hoTen,
+            soDt: user.soDt,
+            loaiNguoiDung: user.loaiNguoiDung
+          }
+        }
+        return data
+      }
+
+    } else {
+      let data = {
+        "statusCode": 400,
+        "message": "Không tìm thấy tài nguyên!",
+        "content": "Tài khoản không có trong danh sách!",
+      }
+      throw new HttpException(data, 400)
+    }
+  }
+
+
+  // xóa người dùng
+  async xoaNguoiDung(taiKhoan) {
+    let taiKhoanNum=Number(taiKhoan)
+    await this.prisma.nguoiDung.delete({
+      where:{tai_khoan:taiKhoanNum}
+    })
+    let data = {
+      "statusCode": 200,
+      "message": "Xóa Người Dùng thành công!",
+      "content": {
+        
+      }
+    }
+    return data
+    
+    
+  }
 
 
 
 
 
-  // create(createNguoiDungDto: CreateNguoiDungDto) {
-  //   return 'This action adds a new nguoiDung';
+  // async xoaNguoiDung() {
+
+    
   // }
 
 
-
-
-  // findOne(id: number) {
-  //   return `This action returns a #${id} nguoiDung`;
-  // }
-
-  // update(id: number, updateNguoiDungDto: UpdateNguoiDungDto) {
-  //   return `This action updates a #${id} nguoiDung`;
-  // }
-
-  // remove(id: number) {
-  //   return `This action removes a #${id} nguoiDung`;
-  // }
 }
