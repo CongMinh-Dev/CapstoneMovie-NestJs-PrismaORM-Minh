@@ -14,6 +14,37 @@ export class MaPhimQueryDto {
   maPhim: number;
 }
 
+// up img
+@ApiExtraModels()
+export class ImgQueryDto {
+  @ApiProperty({required: false,  type:"string", format:"binary"})
+  phimImg: any;
+
+  @ApiProperty({required: true})
+  tenPhim: string
+
+  @ApiProperty({required: true})
+  trailer: string
+
+  @ApiProperty({required: false})
+  moTa: string
+
+  @ApiProperty({required: true, default:"DD/MM/YYYY"})
+  ngayKhoiChieu: string
+
+  @ApiProperty({required: false})
+  danhGia: number
+
+  @ApiProperty({required: false})
+  hot: boolean
+
+  @ApiProperty({required: true})
+  dangChieu: boolean
+
+  @ApiProperty({required: true})
+  sapChieu: boolean
+}
+
 @ApiExtraModels()
 export class PhimParamDto {
   @ApiProperty({ required: true, default: 1 })
@@ -30,6 +61,14 @@ export class PhimTheoNgayParamDto {
 
   @ApiProperty({ required: true, default: "10/06/2024" })
   denNgay: string;
+}
+
+@ApiExtraModels()
+export class MaPhimDto {
+  @ApiProperty({ required: true})
+  maPhim: number;
+
+  
 }
 
 

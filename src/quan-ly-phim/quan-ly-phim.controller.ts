@@ -1,8 +1,19 @@
-import { Controller, Get, HttpCode, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, HttpCode, Post, Query, UseGuards, UseInterceptors, UploadedFile, Body, Delete } from '@nestjs/common';
 import { QuanLyPhimService } from './quan-ly-phim.service';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
-import { MaPhimQueryDto, PhimParamDto, PhimTheoNgayParamDto, TenPhimQueryDto } from './dto/create-quan-ly-phim.dto';
+import { ImgQueryDto, MaPhimDto, MaPhimQueryDto, PhimParamDto, PhimTheoNgayParamDto, TenPhimQueryDto } from './dto/create-quan-ly-phim.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+
+class phimType {
+
+  @ApiProperty()
+  tenPhim: string
+
+
+}
+
 
 @ApiTags("Quản Lý Phim")
 @Controller('api/QuanLyPhim')
@@ -44,6 +55,35 @@ export class QuanLyPhimController {
   @Get("/LayThongTinPhim")
   layThongTinPhim(@Query() query: MaPhimQueryDto) {
     return this.quanLyPhimService.layThongTinPhim(query.maPhim);
+  }
+
+  // them phim
+  @ApiConsumes("multipart/form-data") //đổi từ cấu trúc json sang data
+  @ApiBody({ type: ImgQueryDto })
+  @UseInterceptors(FileInterceptor("phimImg", {
+    storage: diskStorage({
+      destination: 'public/img/',
+      filename: (req, file, callBack) => {
+        let mSeceond = new Date().getTime()
+        callBack(null, mSeceond + "_" + file.originalname)
+      }
+    })
+  }))
+  @HttpCode(200)
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard("jwt"))
+  @Post("/ThemPhim")
+  themPhim(@Body() body: ImgQueryDto, @UploadedFile() file: Express.Multer.File) {
+    return this.quanLyPhimService.themPhim(body, file);
+  }
+
+  // xóa phim
+  @HttpCode(200)
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard("jwt"))
+  @Delete("/XoaPhim")
+  xoaPhim(@Query() query: MaPhimDto) {
+    return this.quanLyPhimService.xoaPhim(query.maPhim);
   }
 
   // @HttpCode(200)

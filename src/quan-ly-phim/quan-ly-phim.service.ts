@@ -2,6 +2,11 @@ import { JwtService } from '@nestjs/jwt';
 import { HttpException, Injectable } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import * as moment from 'moment'
+import { v2 as cloudinary } from 'cloudinary'
+import * as fs from 'node:fs';
+import * as compress_images from "compress-images"
+
+
 
 @Injectable()
 export class QuanLyPhimService {
@@ -156,12 +161,135 @@ export class QuanLyPhimService {
             }
             throw new HttpException(data, 404)
         }
+    }
+
+    // them phim
+    async themPhim(body, file) {
+
+        if (body.tenPhim && body.trailer && body.ngayKhoiChieu && body.dangChieu && body.sapChieu && file) {
+
+            cloudinary.config({
+                cloud_name: 'dgqxl6kjl',
+                api_key: '235221651969883',
+                api_secret: 'biFICi47-VNwBm0O8GGoXEOXyaQ'
+            });
+            const newName = file.filename;
+            // giảm dung lượng file
+            let input = `public/img/${file.filename}`
+            let output = `public/imgLow/`
+
+            await compress_images(input, output,
+                {
+                    compress_force: false, statistic: true, autoupdate: true
+                }, false,
+                { jpg: { engine: "mozjpeg", command: ["-quality", "20"] } },
+                { png: { engine: "pngquant", command: ["--quality=20-50", "-o"] } },
+                { svg: { engine: "svgo", command: "--multipass" } },
+                { gif: { engine: "gifsicle", command: ["--colors", "64", "--use-col=web"] } },
+
+                function (err, completed, statistic) {
+
+                    if (completed) {
+
+                        // đã chuyển thành công thì mới xóa file gốc
+                        fs.unlink(`public/img/${file.filename}`, (err) => {
+                            err && console.log(err)
+                        })
+                        // Tải file lên Cloudinary
+                        cloudinary.uploader
+                            .upload(statistic.path_out_new, {
+                                asset_folder: 'node 41',
+                                resource_type: 'image',
+                                public_id: newName, //id trên clound
+                                display_name: file.originalname // tên hiển thị trên cloud, k có là nó tự random
+                            })
+                            .then(async (res) => {
+                                // up lên thành công thì xóa file low
+                                fs.unlink(`public/imgLow/${file.filename}`, (err) => { })
+                                const ngayKhoiChieu1 = moment(body.ngayKhoiChieu, "DD/MM/YYYY").format("YYYY-MM-DD");
+                                let ngayKhoiChieu2 = new Date(ngayKhoiChieu1)
+                                let prisma = new PrismaClient()
+                                await prisma.phim.create({ //k có await là k chạy dc lệnh này
+                                    data: {
+                                        ten_phim: body.tenPhim,
+                                        trailer: body.trailer,
+                                        hinh_anh: res.secure_url,
+                                        mo_ta: body.moTa,
+                                        ngay_khoi_chieu: ngayKhoiChieu2,
+                                        danh_gia: 1,
+                                        hot: Boolean(body.hot),
+                                        dang_chieu: Boolean(body.dangChieu),
+                                        sap_chieu: Boolean(body.sapChieu),
+
+                                    }
+                                })
+
+                            })
+
+                    }
+                }
+            )
+
+            let data = {
+                "statusCode": 200,
+                "message": "Thêm phim thành công!",
+            }
+            return data
+        } else {
+            let data = {
+                "statusCode": 400,
+                "message": "Yêu cầu không hợp lệ!",
+                "content": "Thiếu dữ liệu về phim!",
+            }
+            throw new HttpException(data, 400)
+        }
+
+
 
 
 
     }
 
-    
+    // xóa phim
+    async xoaPhim(maPhim) {
+        if (maPhim) {
+            let maPhimNum = Number(maPhim)
+            let arrMaPhim = await this.prisma.phim.findMany({
+                select: { ma_phim: true }
+            })
+            let index = arrMaPhim.findIndex((item) => {
+                return item.ma_phim == maPhimNum
+            })
+            if (index == -1) {
+                let data = {
+                    "statusCode": 400,
+                    "message": "Yêu cầu không hợp lệ!",
+                    "content": "Sai mã phim!",
+                }
+                throw new HttpException(data, 400)
+            } else {
+                await this.prisma.phim.delete({
+                    where: { ma_phim: maPhimNum }
+                })
+                let data = {
+                    "statusCode": 200,
+                    "message": "Xóa phim thành công!",
+                }
+                return data
+            }
+
+        } else {
+            let data = {
+                "statusCode": 400,
+                "message": "Yêu cầu không hợp lệ!",
+                "content": "Thiếu mã phim!",
+            }
+            throw new HttpException(data, 400)
+        }
+
+    }
+
+
 
     // async xoaNguoiDung() {
 
