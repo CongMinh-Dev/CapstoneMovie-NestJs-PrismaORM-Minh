@@ -2,7 +2,7 @@ import { Controller, Get, HttpCode, Post, Query, UseGuards, UseInterceptors, Upl
 import { QuanLyPhimService } from './quan-ly-phim.service';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
-import { ImgQueryDto, MaPhimDto, MaPhimQueryDto, PhimParamDto, PhimTheoNgayParamDto, TenPhimQueryDto } from './dto/create-quan-ly-phim.dto';
+import { ImgQueryDto, MaPhimDto, MaPhimQueryDto, PhimParamDto, PhimTheoNgayParamDto, TenPhimQueryDto, UpdatePhimQueryDto } from './dto/create-quan-ly-phim.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 
@@ -85,6 +85,27 @@ export class QuanLyPhimController {
   xoaPhim(@Query() query: MaPhimDto) {
     return this.quanLyPhimService.xoaPhim(query.maPhim);
   }
+
+  // cap nhat phim
+  @ApiConsumes("multipart/form-data") //đổi từ cấu trúc json sang data
+  @ApiBody({ type: ImgQueryDto })
+  @UseInterceptors(FileInterceptor("phimImg", {
+    storage: diskStorage({
+      destination: 'public/img/',
+      filename: (req, file, callBack) => {
+        let mSeceond = new Date().getTime()
+        callBack(null, mSeceond + "_" + file.originalname)
+      }
+    })
+  }))
+  @HttpCode(200)
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard("jwt"))
+  @Post("/CapNhatPhim")
+  capNhatPhim(@Body() body: UpdatePhimQueryDto, @UploadedFile() file: Express.Multer.File) {
+    return this.quanLyPhimService.capNhatPhim(body, file);
+  }
+
 
   // @HttpCode(200)
   // @ApiBearerAuth()

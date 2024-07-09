@@ -1,12 +1,11 @@
 generator client {
-  provider = "prisma-client-js"
-  previewFeatures = ["fullTextSearch", "fullTextIndex"]
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextIndex", "fullTextSearch"]
 }
 
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
-  
 }
 
 model Banner {
@@ -42,11 +41,13 @@ model DatVe {
 }
 
 model Ghe {
-  ma_ghe   Int      @id @default(autoincrement())
-  ten_ghe  String?  @db.VarChar(100)
-  loai_ghe String?  @db.VarChar(100)
-  ma_rap   Int?
-  RapPhim  RapPhim? @relation(fields: [ma_rap], references: [ma_rap], onDelete: NoAction, onUpdate: NoAction, map: "Ghe_ibfk_1")
+  ma_ghe              Int      @id @default(autoincrement())
+  ten_ghe             String?  @db.VarChar(100)
+  loai_ghe            String?  @db.VarChar(100)
+  ma_rap              Int?
+  da_dat              Boolean?
+  tai_khoan_nguoi_dat Int?
+  RapPhim             RapPhim? @relation(fields: [ma_rap], references: [ma_rap], onDelete: NoAction, onUpdate: NoAction, map: "Ghe_ibfk_1")
 
   @@index([ma_rap], map: "ma_rap")
 }

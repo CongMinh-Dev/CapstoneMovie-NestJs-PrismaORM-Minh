@@ -402,49 +402,47 @@ export class NguoiDungService {
     if (taiKhoan) {
       let taiKhoanNum = Number(taiKhoan)
       let arrTaiKhoan = await this.prisma.nguoiDung.findMany({
-          select: { tai_khoan: true }
+        select: { tai_khoan: true }
       })
       let index = arrTaiKhoan.findIndex((item) => {
-          return item.tai_khoan == taiKhoanNum
+        return item.tai_khoan == taiKhoanNum
       })
       if (index == -1) {
-          let data = {
-              "statusCode": 400,
-              "message": "Yêu cầu không hợp lệ!",
-              "content": "Sai tài khoản!",
-          }
-          throw new HttpException(data, 400)
-      } else {
-          await this.prisma.nguoiDung.delete({
-              where: { tai_khoan: taiKhoanNum }
-          })
-          let data = {
-              "statusCode": 200,
-              "message": "Xóa người dùng thành công!",
-          }
-          return data
-      }
-
-  } else {
-      let data = {
+        let data = {
           "statusCode": 400,
           "message": "Yêu cầu không hợp lệ!",
-          "content": "Thiếu tài khoản!",
+          "content": "Sai tài khoản!",
+        }
+        throw new HttpException(data, 400)
+      } else {
+        await this.prisma.nguoiDung.delete({
+          where: { tai_khoan: taiKhoanNum }
+        })
+        let data = {
+          "statusCode": 200,
+          "message": "Xóa người dùng thành công!",
+        }
+        return data
+      }
+
+    } else {
+      let data = {
+        "statusCode": 400,
+        "message": "Yêu cầu không hợp lệ!",
+        "content": "Thiếu tài khoản!",
       }
       throw new HttpException(data, 400)
+    }
   }
 
-    
-    
-  }
-
+  
 
 
 
 
   // async xoaNguoiDung() {
 
-    
+
   // }
 
 

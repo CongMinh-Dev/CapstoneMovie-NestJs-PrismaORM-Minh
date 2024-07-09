@@ -7,6 +7,8 @@ import { JwtStrategy } from './strategy/jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { QuanLyPhimModule } from './quan-ly-phim/quan-ly-phim.module';
+import { QuanLyRapModule } from './quan-ly-rap/quan-ly-rap.module';
+import { QuanLyDatVeModule } from './quan-ly-dat-ve/quan-ly-dat-ve.module';
 
 @Module({
   imports: [
@@ -15,7 +17,7 @@ import { QuanLyPhimModule } from './quan-ly-phim/quan-ly-phim.module';
         secret: "bi_mat", // Replace with your secret
         // ... other JWT options
     }),
-    NguoiDungModule, AuthModule, QuanLyPhimModule],
+    NguoiDungModule, AuthModule, QuanLyPhimModule, QuanLyRapModule, QuanLyDatVeModule],
   controllers: [AppController],
   providers: [AppService, JwtStrategy],
 })
