@@ -1,9 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, Query, UseGuards, Req } from '@nestjs/common';
 import { QuanLyDatVeService } from './quan-ly-dat-ve.service';
-import { ApiBearerAuth, ApiExtraModels, ApiProperty, ApiTags } from '@nestjs/swagger';
-import { MaLichChieuQueryDto, TaiKhoanQueryDto, datVeTypeDto, lichChieuTypeDto } from './dto/create-quan-ly-dat-ve.dto';
+import { ApiBearerAuth, ApiBody, ApiExtraModels, ApiProperty, ApiTags } from '@nestjs/swagger';
+import { MaLichChieuQueryDto, lichChieuTypeDto } from './dto/create-quan-ly-dat-ve.dto';
 import { AuthGuard } from '@nestjs/passport';
-
+import { Request } from "express"
 
 
 
@@ -24,20 +24,38 @@ export class QuanLyDatVeController {
   @ApiBearerAuth()
   @UseGuards(AuthGuard("jwt"))
   @Post("/TaoLichChieu")
-  taoLichChieu(@Body() body: lichChieuTypeDto    
-   ) {
+  taoLichChieu(@Body() body: lichChieuTypeDto
+  ) {
     return this.quanLyDatVeService.taoLichChieu(body);
   }
 
   // dat ve
   @HttpCode(200)
   @ApiBearerAuth()
-  @ApiExtraModels(TaiKhoanQueryDto)
   @UseGuards(AuthGuard("jwt"))
   @Post("/DatVe")
-  datVe(@Body() body: datVeTypeDto    
-   ) {
-    return this.quanLyDatVeService.datVe(body);
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        maLichChieu: { type: 'number' },
+        danhSachVe: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              maGhe: { type: 'string' },
+              giaVe: { type: "number" }
+            },
+          },
+        },
+      },
+    }
+  })
+  datVe(@Body() datVeObj, @Req() req: Request) {
+    // console.log(datVeObj)
+    // console.log(req)
+    return this.quanLyDatVeService.datVe(datVeObj,req.user);
   }
 
   // @HttpCode(200)

@@ -32,7 +32,7 @@ model DatVe {
   ma_dat_ve     Int        @id @default(autoincrement())
   tai_khoan     Int?
   ma_lich_chieu Int?
-  ma_ghe        Int?
+  ma_ghe        String?    @db.VarChar(3000)
   NguoiDung     NguoiDung? @relation(fields: [tai_khoan], references: [tai_khoan], onDelete: NoAction, onUpdate: NoAction, map: "DatVe_ibfk_1")
   LichChieu     LichChieu? @relation(fields: [ma_lich_chieu], references: [ma_lich_chieu], onDelete: NoAction, onUpdate: NoAction, map: "DatVe_ibfk_2")
 

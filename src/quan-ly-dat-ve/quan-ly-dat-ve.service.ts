@@ -2,6 +2,7 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
 import * as moment from 'moment'
+import { daDatGhe, hasDuplicates } from './dto/create-quan-ly-dat-ve.dto';
 
 @Injectable()
 export class QuanLyDatVeService {
@@ -115,58 +116,144 @@ export class QuanLyDatVeService {
     }
   }
 
-  // dat dat ve 
-  async datVe(model) {
-    // if (model.taiKhoan && model.maLichChieu && model.maGhe) {
-    //   let arrMaGhe = await this.prisma.ghe.findMany({ select: { ma_ghe: true } })
-    //   let indexGhe = arrMaGhe.findIndex((item) => {
-    //     return item.ma_ghe == Number(model.maGhe)
-    //   })
+  //  dat ve 
+  async datVe(model, user) {
+    if (user.taiKhoan && model.maLichChieu && model.danhSachVe) {
 
-    //   if (indexGhe == -1) {
-    //     let data = {
-    //       "statusCode": 400,
-    //       "message": "Không tìm thấy tài nguyên!",
-    //       "content": "Mã ghế không tồn tại!",
-    //     }
-    //     throw new HttpException(data, 400)
-    //   } else {
-    //     await this.prisma.datVe.create({
-    //       data: {
-    //         tai_khoan: Number(model.taiKhoan),
-    //         ma_lich_chieu: Number(model.maLichChieu),
-    //         ma_ghe: Number(model.maGhe),
-    //       }
-    //     });
+      // kiểm tra mã ghế có tồn tại không
+      let arrMaGheTam = await this.prisma.ghe.findMany({ select: { ma_ghe: true } })
+      let arrMaGhe = []
+      arrMaGheTam.map((item) => {
+        let maGhe = item.ma_ghe
+        arrMaGhe.push(maGhe)
+      })
 
-    //     await this.prisma.ghe.update({
-    //       where: {
-    //         ma_ghe: Number(model.maGhe)
-    //       },
-    //       data: {
-    //         da_dat: true,
-    //         tai_khoan_nguoi_dat: Number(model.taiKhoan)
-    //       }
-    //     });
+      let arrMaGheUserDat = []
+      model.danhSachVe.map((item) => {
+        let maGhe = item.maGhe
+        arrMaGheUserDat.push(maGhe)
+      })
 
-    //     let data = {
-    //       "statusCode": 200,
-    //       "message": "Xử lý thành công!",
-    //       "content": {}
-    //     }
-    //     return data
+      let isMaGhe = arrMaGheUserDat.every(element => arrMaGhe.includes(element));
 
 
-    //   }
+      if (!isMaGhe) {
+        let data = {
+          "statusCode": 400,
+          "message": "Không tìm thấy tài nguyên!",
+          "content": "Mã ghế không tồn tại!",
+        }
+        throw new HttpException(data, 400)
+      } else {
+        // kiểm tra xem mã ghế này đẵ đặt chưa
+        let arrMaGheDaDatTam = await this.prisma.ghe.findMany({
+          where: { da_dat: true },
+          select: { ma_ghe: true }
+        })
+        let arrMaGheDaDat = []
+        arrMaGheDaDatTam.map((item) => {
+          let maGhe = item.ma_ghe
+          arrMaGheDaDat.push(maGhe)
+        })
+        // kiểm tra xem mã ghế user đặt có trùng nhau không
+        let isTrung = hasDuplicates(arrMaGheUserDat)
+        if (isTrung) {
+          // trùng
+          let data = {
+            "statusCode": 400,
+            "message": "Không tìm thấy tài nguyên!",
+            "content": "Trùng mà ghế!",
+          }
+          throw new HttpException(data, 400)
+        } else {
+          // k trùng
+          if (!arrMaGheDaDat[0]) {
+            // trường hợp tất cả ghế chưa đặt
+            let arrMaGheString = String(arrMaGheUserDat)
+            // ----thêm 1 dòng cho bẳng đặt vé
+            await this.prisma.datVe.create({
+              data: {
+                tai_khoan: Number(user.taiKhoan),
+                ma_lich_chieu: Number(model.maLichChieu),
+                ma_ghe: arrMaGheString,
+              }
+            });
+            // ----cập nhất đã đặt và tài khoảng người đặt
+            arrMaGheUserDat.map(async (item) => {
+              let maGheNum = Number(item)
+              await this.prisma.ghe.update({
+                where: {
+                  ma_ghe: maGheNum
+                },
+                data: {
+                  da_dat: true,
+                  tai_khoan_nguoi_dat: Number(user.taiKhoan)
+                }
+              });
 
-    // } else {
-    //   let data = {
-    //     "statusCode": 400,
-    //     "message": "Không tìm thấy tài nguyên!",
-    //     "content": "Thiếu trường dữ liệu!",
-    //   }
-    //   throw new HttpException(data, 400)
-    // }
+            })
+            let data = {
+              "statusCode": 200,
+              "message": "Xử lý thành công!",
+              "content": {}
+            }
+            return data
+
+          } else {
+            // đã có ghế đã được đặt
+            let isDaDat = daDatGhe(arrMaGheDaDat, arrMaGheUserDat)
+            if (isDaDat) {
+              let data = {
+                "statusCode": 400,
+                "message": "Không tìm thấy tài nguyên!",
+                "content": "Ghế của bạn đã có người khác đặt!",
+              }
+              throw new HttpException(data, 400)
+            } else {
+              let arrMaGheString = String(arrMaGheUserDat)
+              // ----thêm 1 dòng cho bẳng đặt vé
+              await this.prisma.datVe.create({
+                data: {
+                  tai_khoan: Number(user.taiKhoan),
+                  ma_lich_chieu: Number(model.maLichChieu),
+                  ma_ghe: arrMaGheString,
+                }
+              });
+              // ----cập nhất đã đặt và tài khoảng người đặt
+              arrMaGheUserDat.map(async (item) => {
+                let maGheNum = Number(item)
+                await this.prisma.ghe.update({
+                  where: {
+                    ma_ghe: maGheNum
+                  },
+                  data: {
+                    da_dat: true,
+                    tai_khoan_nguoi_dat: Number(user.taiKhoan)
+                  }
+                });
+
+              })
+              let data = {
+                "statusCode": 200,
+                "message": "Xử lý thành công!",
+                "content": {}
+              }
+              return data
+            }
+          }
+
+        }
+
+      }
+
+    } else {
+      let data = {
+        "statusCode": 400,
+        "message": "Không tìm thấy tài nguyên!",
+        "content": "Thiếu trường dữ liệu!",
+      }
+      throw new HttpException(data, 400)
+    }
   }
 
 

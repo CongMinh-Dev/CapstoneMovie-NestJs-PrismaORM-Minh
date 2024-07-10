@@ -38,7 +38,6 @@ export class QuanLyPhimController {
   @HttpCode(200)
   @Get("/LayDanhSachPhimPhanTrang")
   layArrPhimPhanTrang(@Query() query: PhimParamDto) {
-
     return this.quanLyPhimService.layArrPhimPhanTrang(query.soTrang, query.soPhanTuTrenTrang);
   }
 
@@ -46,7 +45,6 @@ export class QuanLyPhimController {
   @HttpCode(200)
   @Get("/LayDanhSachPhimTheoNgay")
   layArrPhimTheoNgay(@Query() query: PhimTheoNgayParamDto) {
-
     return this.quanLyPhimService.layArrPhimTheoNgay(query.tuNgay, query.denNgay);
   }
 
