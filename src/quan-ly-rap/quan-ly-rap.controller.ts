@@ -37,11 +37,5 @@ export class QuanLyRapController {
   }
 
 
-  // @HttpCode(200)
-  // @ApiBearerAuth()
-  // @UseGuards(AuthGuard("jwt"))
-  // @Post("/XoaNguoiDung")
-  // xoaNguoiDung() {
-  //   return this.nguoiDungService.xoaNguoiDung();
-  // }
+  
 }

@@ -53,16 +53,9 @@ export class QuanLyDatVeController {
     }
   })
   datVe(@Body() datVeObj, @Req() req: Request) {
-    // console.log(datVeObj)
-    // console.log(req)
+    
     return this.quanLyDatVeService.datVe(datVeObj,req.user);
   }
 
-  // @HttpCode(200)
-  // @ApiBearerAuth()
-  // @UseGuards(AuthGuard("jwt"))
-  // @Post("/XoaNguoiDung")
-  // xoaNguoiDung() {
-  //   return this.nguoiDungService.xoaNguoiDung();
-  // }
+  
 }

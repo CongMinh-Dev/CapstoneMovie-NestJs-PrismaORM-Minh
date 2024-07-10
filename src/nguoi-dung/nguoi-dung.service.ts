@@ -435,15 +435,6 @@ export class NguoiDungService {
     }
   }
 
-  
-
-
-
-
-  // async xoaNguoiDung() {
-
-
-  // }
-
+ 
 
 }

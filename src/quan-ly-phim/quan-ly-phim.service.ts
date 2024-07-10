@@ -414,24 +414,7 @@ export class QuanLyPhimService {
 
 
 
-    // async xoaNguoiDung() {
-
-
-    // }
+    
 }
 
 
-// let data = {
-//     "statusCode": 200,
-//     "message": "Xử lý thành công!",
-//     "content": item
-//   }
-//   return data
-
-
-// let data = {
-//     "statusCode": 404,
-//     "message": "Không tìm thấy tài nguyên!",
-//     "content": "Mật khẩu không đúng!",
-//   }
-//   throw new HttpException(data, 404)
